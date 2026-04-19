@@ -62,7 +62,7 @@
 
 <div class="grid-3">
   <div class="card"><div class="stat-label">GA4 Sessions (12mo)</div><div class="stat">1.45M</div><div class="note">Apr 2025 – Apr 2026</div></div>
-  <div class="card"><div class="stat-label">GA4 Key Events (12mo)</div><div class="stat">12,090</div><div class="note">Signups, demo requests, trials</div></div>
+  <div class="card"><div class="stat-label">GA4 Key Events (12mo)</div><div class="stat">12,090</div><div class="note">~99% company_created + demo_request_cal + form_submit</div></div>
   <div class="card"><div class="stat-label">Demo Bookings (6mo)</div><div class="stat">1,000</div><div class="note">Jan–May 2026 incl. scheduled</div></div>
 </div>
 
@@ -83,14 +83,44 @@
   </div>
 </div>
 
-<h2>2. What self-report says vs what GA4 sees</h2>
+<h2>2. What makes up the 12,090 key events</h2>
+<div class="grid-2">
+  <div class="card">
+    <h3>Key event breakdown</h3>
+    <div class="chart-wrap"><canvas id="keyEventSplit"></canvas></div>
+    <div class="legend-row">One event does ~99% of the work: <code>company_created</code>. Our conversion metric is effectively &quot;companies created in-product&quot;, not raw signups.</div>
+  </div>
+  <div class="card">
+    <h3>Event counts, conversion-relevant only</h3>
+    <div class="chart-wrap"><canvas id="eventVolumeCompare"></canvas></div>
+    <div class="legend-row"><code>signup</code> fires 27,008 times but is <strong>not</strong> a key event — the gap to <code>company_created</code> (12,133) is where ~55% of signups drop out before completing setup.</div>
+  </div>
+</div>
+<div class="card" style="margin-top:16px;">
+<table>
+  <thead><tr><th>Event</th><th class="num">12mo count</th><th>Marked as key event</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>company_created</code></td><td class="num">12,133</td><td><span class="tag hi">Yes</span></td><td>Primary conversion. Fires when a user completes org creation.</td></tr>
+    <tr><td><code>demo_request_cal</code></td><td class="num">133</td><td><span class="tag hi">Yes</span></td><td>Book-a-demo via Cal.com. Tiny in GA4 vs 1,000 in Reva — most demos are booked off-site.</td></tr>
+    <tr><td><code>form_submit</code></td><td class="num">16</td><td><span class="tag hi">Yes</span></td><td>Generic form submit. Noise.</td></tr>
+    <tr><td><code>signup</code></td><td class="num">27,008</td><td><span class="tag lo">No</span></td><td>Account created but org not yet provisioned. Funnel leak here.</td></tr>
+    <tr><td><code>reviewed_prompts_results</code></td><td class="num">48,005</td><td><span class="tag lo">No</span></td><td>Product engagement.</td></tr>
+    <tr><td><code>reviewed_prompts</code></td><td class="num">23,584</td><td><span class="tag lo">No</span></td><td>Product engagement.</td></tr>
+    <tr><td><code>file_download</code></td><td class="num">2,505</td><td><span class="tag lo">No</span></td><td>Resource downloads.</td></tr>
+    <tr><td><code>form_start</code></td><td class="num">105,908</td><td><span class="tag lo">No</span></td><td>Form opened but not submitted.</td></tr>
+  </tbody>
+</table>
+<div class="note">Key events sum to 12,282 vs 12,090 reported in the channel view — diff is sessions GA4 could not attribute to a channel group. Source: GA4 Events report, Apr 2025 – Apr 2026.</div>
+</div>
+
+<h2>3. What self-report says vs what GA4 sees</h2>
 <div class="card">
   <h3>Demo bookers (self-reported) vs GA4 sessions, by channel</h3>
   <div class="chart-wrap tall"><canvas id="selfVsGa4"></canvas></div>
   <div class="legend-row">AI Search is 14.9% of demo bookers but only 0.5% of GA4 sessions. Word of mouth is 19.3% of bookers and invisible in GA4. This gap is what sits inside Direct.</div>
 </div>
 
-<h2>3. Direct, decomposed (best estimate)</h2>
+<h2>4. Direct, decomposed (best estimate)</h2>
 <div class="grid-2">
   <div class="card">
     <h3>What is hiding in Direct</h3>
@@ -104,7 +134,7 @@
   </div>
 </div>
 
-<h2>4. AI Search is the fastest-growing channel</h2>
+<h2>5. AI Search is the fastest-growing channel</h2>
 <div class="grid-2">
   <div class="card">
     <h3>Users referred from LLMs, monthly</h3>
@@ -118,7 +148,7 @@
   </div>
 </div>
 
-<h2>5. Ranked channel view</h2>
+<h2>6. Ranked channel view</h2>
 <div class="card">
 <table>
   <thead>
@@ -140,7 +170,7 @@
 <div class="note">*Self-reported &quot;Google&quot; on demo bookings mixes branded typed URLs with actual organic clicks.</div>
 </div>
 
-<h2>6. What to do next</h2>
+<h2>7. What to do next</h2>
 <div class="card">
 <ol class="clean">
   <li><strong>Add &quot;how did you hear about us&quot; to free signup.</strong> One field, optional. Gives us the calibration layer we currently only have on demos. Cost: one engineering hour.</li>
@@ -187,6 +217,34 @@ new Chart(document.getElementById('ga4KeyEvents'), {
     datasets: [{data:[47.5,25.6,18.4,2.9,1.1,1.1,1.0,0.9,0.6,0.3,0.3], backgroundColor: mono}]
   },
   options: {plugins:{legend:{position:'right',labels:{boxWidth:10}}}, cutout:'55%'}
+});
+
+// 2a. Key event doughnut
+new Chart(document.getElementById('keyEventSplit'), {
+  type: 'doughnut',
+  data: {
+    labels: ['company_created (12,133)','demo_request_cal (133)','form_submit (16)'],
+    datasets: [{data:[12133,133,16], backgroundColor: ['#0f172a','#0ea5e9','#d97706']}]
+  },
+  options: {plugins:{legend:{position:'right',labels:{boxWidth:10}}}, cutout:'55%'}
+});
+
+// 2b. Event volume compare (log scale bar)
+new Chart(document.getElementById('eventVolumeCompare'), {
+  type: 'bar',
+  data: {
+    labels: ['form_start','reviewed_prompts_results','signup','reviewed_prompts','company_created','file_download','demo_request_cal','form_submit'],
+    datasets: [{
+      label: 'Event count (12mo)',
+      data: [105908, 48005, 27008, 23584, 12133, 2505, 133, 16],
+      backgroundColor: ['#cbd5e1','#cbd5e1','#94a3b8','#cbd5e1','#0f172a','#cbd5e1','#0ea5e9','#d97706']
+    }]
+  },
+  options: {
+    indexAxis:'y',
+    scales:{x:{type:'logarithmic', grid:{color:'#e2e8f0'}, ticks:{callback:(v)=>v.toLocaleString()}}},
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:(c)=>c.parsed.x.toLocaleString()+' events'}}}
+  }
 });
 
 // 3. Self-report vs GA4
